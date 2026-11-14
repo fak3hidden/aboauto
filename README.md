@@ -62,8 +62,9 @@ Wine. Install Wine (e.g. `sudo apt install wine`) and point the app at your
 Each Wine launch gets its own `WINEPREFIX` under
 `~/.local/share/aboauto/wineprefixes/`, so multiple clients can run side by side.
 
-**Sober** — launches `flatpak run org.vinegarhq.Sober` (VinegarHQ's unofficial
-Linux Roblox client running Roblox's Android build natively). Install Sober:
+**Sober** — launches `flatpak run --instance=<id> org.vinegarhq.Sober`
+(VinegarHQ's unofficial Linux Roblox client running Roblox's Android build
+natively). Install Sober:
 
 ```
 flatpak install flathub org.vinegarhq.Sober
@@ -72,6 +73,9 @@ flatpak install flathub org.vinegarhq.Sober
 Sober handles its own login UI, so aboauto launches Sober and you pick the
 account inside it. Set Launcher mode to `sober` in Settings (or pass
 `--launcher-mode sober` on the CLI).
+
+Sober uses Flatpak's ``--instance`` flag so each launch is a separate,
+isolated client — multi-instance works the same as Wine mode.
 
 ### Data & security
 

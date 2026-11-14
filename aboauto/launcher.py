@@ -63,10 +63,15 @@ def build_command(spec: LaunchSpec) -> list[str]:
     Launcher mode ``wine`` launches RobloxPlayerBeta.exe through Wine.
     Launcher mode ``sober`` launches the VinegarHQ Sober Flatpak
     (org.vinegarhq.Sober), which runs Roblox's Android build natively on
-    Linux and handles its own login UI.
+    Linux and handles its own login UI.  Each instance uses Flatpak's
+    ``--instance`` flag so multiple Sober clients can run concurrently.
     """
     if spec.launcher_mode == "sober":
-        cmd = [spec.sober_bin, "run", spec.sober_flatpak_id]
+        # Flatpak --instance lets us run multiple isolated Sober clients at
+        # once. Without it, `flatpak run` reuses the existing instance and
+        # just focuses the window ("another instance is already running").
+        cmd = [spec.sober_bin, "run", "--instance=" + spec.instance_id,
+               spec.sober_flatpak_id]
         if spec.extra_args:
             cmd.extend(shlex.split(spec.extra_args))
         return cmd
