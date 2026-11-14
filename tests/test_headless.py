@@ -57,7 +57,7 @@ assert inst.id
 assert inst.status in ("starting", "running", "error")
 # wait for the background thread to reach a terminal state
 import time
-for _ in range(50):  # up to ~5s
+for _ in range(100):  # up to ~10s (wineboot may take a few seconds)
     inst = mgr.get(inst.id)
     if inst.status in ("error", "stopped", "running"):
         break

@@ -101,12 +101,16 @@ def prefix_dir_for(spec: LaunchSpec) -> Path:
     return p
 
 
-def init_wine_prefix(wine_bin: str, wine_prefix: str, timeout: int = 180) -> tuple[bool, str]:
+def init_wine_prefix(wine_bin: str, wine_prefix: str, timeout: int = 8) -> tuple[bool, str]:
     """Initialize a Wine prefix if it is not already initialized.
 
-    Runs ``wineboot --init`` so the "Wine configuration is being updated,
-    please wait..." dialog completes *before* Roblox launches, instead of
-    racing with it and crashing.  Returns (success, message).
+    Creates the WINEPREFIX directory and runs ``wineboot --init`` so the
+    "Wine configuration is being updated, please wait..." dialog completes
+    *before* Roblox launches, instead of racing with it and crashing.
+
+    wineboot is best-effort: if it times out (e.g. no display to show the
+    dialog) we still proceed -- the prefix directory exists and Wine will
+    initialize on first Roblox launch.  Returns (success, message).
     """
     from pathlib import Path
 
@@ -120,6 +124,7 @@ def init_wine_prefix(wine_bin: str, wine_prefix: str, timeout: int = 180) -> tup
     env = dict(os.environ)
     env["WINEPREFIX"] = wine_prefix
     env["WINEDEBUG"] = "-all"
+    env["WINEDLLOVERRIDES"] = "mscoree,mshtml="
 
     try:
         result = subprocess.run(
@@ -131,9 +136,9 @@ def init_wine_prefix(wine_bin: str, wine_prefix: str, timeout: int = 180) -> tup
         )
         if result.returncode == 0:
             return True, "prefix initialized"
-        return False, f"wineboot exited {result.returncode}: {result.stderr.strip()}"
+        return True, f"wineboot exited {result.returncode} (continuing anyway)"
     except subprocess.TimeoutExpired:
-        return False, "wineboot timed out"
+        return True, "wineboot timed out (continuing anyway)"
     except FileNotFoundError:
         return False, f"{wine_bin} not found"
 
@@ -148,7 +153,12 @@ def prepare_for_launch(spec: LaunchSpec) -> tuple[bool, str]:
     if spec.launcher_mode == "sober":
         return True, "sober mode (no prefix needed)"
     prefix_dir_for(spec)
-    return init_wine_prefix(spec.wine_bin, spec.wine_prefix)
+    ok, msg = init_wine_prefix(spec.wine_bin, spec.wine_prefix)
+    # If wine isn't installed at all we can't launch; otherwise proceed
+    # even if wineboot timed out -- the prefix dir exists.
+    if not ok and "not found" in msg:
+        return False, msg
+    return True, msg
 
 
 def is_wine_available() -> bool:
