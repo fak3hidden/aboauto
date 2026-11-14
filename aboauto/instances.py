@@ -206,6 +206,11 @@ class InstanceManager:
                 inst.process.kill()
             else:
                 inst.process.terminate()
+            try:
+                inst.process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                inst.process.kill()
+                inst.process.wait(timeout=5)
         except Exception:  # noqa: BLE001
             return False
         with self._lock:
