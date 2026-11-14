@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>aboauto — Roblox Semi Account Manager (Linux)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1115; --card:#161a22; --card-hover:#1e232e;
+    --text:#eaeaea; --muted:#94a3b8; --accent:#38bdf8; --accent-dim:#2563eb;
+    --success:#22c55e; --danger:#ef4444; --warn:#f59e0b; --border:#272e3a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:14px}
+  body{min-height:100vh;display:grid;grid-template-rows:auto 1fr auto}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,pre{font-family:'JetBrains Mono',monospace}
+  .container{max-width:1100px;margin:0 auto;padding:1.25rem 1rem}
+  /* header */
+  header{background:#11141b;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+  .header-inner{display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1rem}
+  .brand{display:flex;align-items:center;gap:0.75rem;font-weight:700;font-size:1.15rem;letter-spacing:-0.4px}
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  .status-chips{display:flex;gap:0.5rem}
+  .chip{display:flex;align-items:center;gap:0.4rem;padding:0.2rem 0.65rem;border-radius:999px;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:0.8rem}
+  .chip.ok{color:var(--success);border-color:#166534;background:#06281b}
+  .chip.bad{color:var(--danger);border-color:#7f1d1d;background:#450a0a}
+  .chip .v{font-weight:700;margin-left:0.2rem}
+  /* tabs */
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1rem}
+  .tab{padding:0.6rem 1rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;font-size:0.9rem;font-weight:500}
+  .tab:hover{color:var(--text);background:var(--card)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .tab-content{display:none}
+  .tab-content.active{display:block}
+  /* panels */
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem}
+  .panel h2{font-size:1rem;margin-bottom:0.75rem;color:var(--text);display:flex;align-items:center;gap:0.5rem}
+  .panel h2 .k{color:var(--muted);font-weight:400;font-size:0.85rem}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem}
+  .field{display:flex;flex-direction:column;gap:0.35rem}
+  .field label{font-size:0.8rem;color:var(--muted)}
+  .field input,.field select,.field textarea{
+    background:#0b0e13;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0.45rem 0.6rem;font-family:inherit;font-size:0.9rem
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+  .row{display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border-radius:6px;border:1px solid transparent;background:var(--accent);color:#001a26;font-weight:600;font-size:0.88rem;cursor:pointer}
+  .btn:hover{background:#4fc3f8}
+  .btn:active{transform:translateY(1px)}
+  .btn.secondary{background:transparent;border-color:var(--border);color:var(--text)}
+  .btn.secondary:hover{border-color:var(--accent)}
+  .btn.danger{background:transparent;border-color:var(--danger);color:var(--danger)}
+  .btn.danger:hover{background:rgba(239,68,68,0.12);border-color:var(--danger)}
+  .btn.small{padding:0.25rem 0.55rem;font-size:0.78rem}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+  .btn.ghost:hover{color:var(--text);background:var(--card-hover)}
+  .btn:disabled{opacity:0.5;cursor:not-allowed}
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.75rem}
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:0.85rem}
+  th{text-align:left;color:var(--muted);font-weight:500;padding:0.5rem 0.6rem;border-bottom:1px solid var(--border)}
+  td{padding:0.55rem 0.6rem;border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:hover td{background:var(--card-hover)}
+  .cell-actions{display:flex;gap:0.35rem}
+  .badge{display:inline-flex;align-items:center;gap:0.3rem;padding:0.1rem 0.45rem;border-radius:999px;font-size:0.72rem;font-weight:600;border:1px solid currentColor}
+  .badge.running{color:var(--success);border-color:#166534}
+  .badge.stopped{color:var(--muted);border-color:var(--border)}
+  .badge.error{color:var(--danger);border-color:#7f1d1d}
+  .badge.starting{color:var(--warn);border-color:#78350f}
+  .mono{font-family:'JetBrains Mono',monospace;font-size:0.8rem}
+  .empty{color:var(--muted);padding:1.5rem;text-align:center}
+  .log{font-family:'JetBrains Mono',monospace;font-size:0.7rem;line-height:1.3;max-height:180px;overflow:auto;background:#0b0e13;border:1px solid var(--border);border-radius:6px;padding:0.5rem;color:#94a3b8}
+  .log .sys{color:var(--muted);font-style:italic}
+  /* form modal-ish inline */
+  .inline-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;align-items:end}
+  .notice{font-size:0.8rem;color:var(--muted);background:var(--card-hover);border:1px dashed var(--border);border-radius:6px;padding:0.6rem 0.8rem;margin-top:0.75rem}
+  .notice b{color:var(--text)}
+  .hidden{display:none}
+  .toast{position:fixed;bottom:1rem;right:1rem;padding:0.75rem 1rem;border-radius:8px;background:#161a22;border:1px solid var(--border);color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,0.4);transform:translateY(120px);transition:transform .2s;z-index:50;display:none}
+  .toast.show{transform:translateY(0)}
+  .toast.success{border-color:var(--success);color:var(--success)}
+  @media (max-width:640px){.container{padding:0.75rem 0.5rem}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner" style="max-width:1100px;margin:0 auto">
+    <div class="brand"><div class="dot" id="statusDot"></div><div>aboauto<span class="k">· Roblox Semi Account Manager for Linux</span></div></div>
+    <div class="status-chips" id="statusChips">
+      <div class="chip" id="chipWine"><span>Wine</span> <span class="v">checking…</span></div>
+      <div class="chip" id="chipSober"><span>Sober</span> <span class="v">checking…</span></div>
+      <div class="chip"><span>Accounts</span> <span class="v" id="chipAccounts">–</span></div>
+      <div class="chip"><span>Running</span> <span class="v" id="chipRunning">–</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" data-tab="dashboard">Dashboard</button>
+    <button class="tab" data-tab="accounts">Account Manager</button>
+    <button class="tab" data-tab="multi">Multi Instance</button>
+    <button class="tab" data-tab="instances">Instance Manager</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </div>
+
+  <!-- Dashboard -->
+  <section class="tab-content active" id="tab-dashboard">
+    <div class="grid">
+      <div class="panel">
+        <h2>Quick launch <span class="k">start one Roblox client</span></h2>
+        <div class="field">
+          <label>Account</label>
+          <select id="qbAccount" style="height:2.35rem"></select>
+        </div>
+        <button class="btn" id="btnQbLaunch">Launch instance</button>
+        <div class="notice">Launches Roblox through Wine using an isolated WINEPREFIX per instance.<br>
+        Point Settings at your RobloxPlayerBeta.exe (Windows) path first.</div>
+      </div>
+      <div class="panel">
+        <h2>Multi launch <span class="k">start several at once</span></h2>
+        <div class="field" style="min-height:120px">
+          <label>Accounts</label>
+          <select id="multiAccounts" multiple style="height:110px"></select>
+        </div>
+        <button class="btn" id="btnMultiLaunch">Launch selected</button>
+        <div class="notice">Each instance gets its own Wine prefix so they don't collide.</div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:1rem">
+      <h2>What is this? <span class="k">aboauto in a nutshell</span></h2>
+      <p style="color:var(--muted);font-size:0.88rem;line-height:1.5">
+        <b>aboauto</b> is a semi account manager for Roblox on Linux. It keeps your accounts in an
+        encrypted local SQLite database (<code>~/.local/share/aboauto/aboauto.db</code>), lets you
+        launch any number of Roblox clients at once (<b>Multi Instance</b>), and tracks every running
+        client so you can stop or restart them (<b>Instance Manager</b>).<br><br>
+        Roblox has no official Linux client and limits one instance per Wine prefix, so aboauto gives
+        each launch its own isolated <code>WINEPREFIX</code>. You still need Wine installed and a
+        Roblox install (typically <code>~/.wine/drive_c/Program Files (x86)/Roblox/…/RobloxPlayerBeta.exe</code>).
+      </p>
+    </div>
+  </section>
+
+  <!-- Account Manager -->
+  <section class="tab-content" id="tab-accounts">
+    <div class="toolbar">
+      <div>
+        <h2>Account Manager <span class="k">store + launch accounts</span></h2>
+      </div>
+      <button class="btn" id="btnOpenAddAccount">+ Add account</button>
+    </div>
+    <div class="panel" style="margin-top:0.75rem">
+      <div class="inline-form" id="addAccountForm" style="display:none">
+        <div class="field"><label>Username</label><input id="inAccUser" required></div>
+        <div class="field"><label>Password</label><input id="inAccPass" type="password"></div>
+        <div class="field"><label>.ROBLOSECURITY cookie</label><input id="inAccCookie" type="password"></div>
+        <div class="field"><label>Display name</label><input id="inAccDisplay"></div>
+        <div class="field"><label>Note</label><input id="inAccNote"></div>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn" id="btnSaveAccount">Save</button>
+          <button class="btn secondary" id="btnCancelAdd">Cancel</button>
+        </div>
+      </div>
+      <table id="accountsTable">
+        <thead><tr><th style="width:40px">ID</th><th>Username</th><th>Display</th><th>Credentials</th><th>Last launched</th><th style="width:220px">Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Multi Instance -->
+  <section class="tab-content" id="tab-multi">
+    <div class="toolbar">
+      <div><h2>Multi Instance <span class="k">launch many clients at once</span></h2></div>
+    </div>
+    <div class="panel">
+      <p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem">
+        Select accounts, then launch them all. Each gets its own isolated Wine prefix and a small
+        stagger delay (set in Settings) so the Roblox singleton check doesn't trip.
+      </p>
+      <div class="field" style="min-height:150px">
+        <label>Accounts to launch</label>
+        <select id="multiSel" multiple style="height:150px;width:100%"></select>
+        <div style="margin-top:0.35rem;color:var(--muted);font-size:0.8rem">Ctrl/Cmd + click to select multiple.</div>
+      </div>
+      <button class="btn" id="btnMultiLaunch2">Launch selected instances</button>
+      <button class="btn secondary" id="btnMultiSelectAll">Select all</button>
+    </div>
+  </section>
+
+  <!-- Instance Manager -->
+  <section class="tab-content" id="tab-instances">
+    <div class="toolbar">
+      <div><h2>Instance Manager <span class="k">running Roblox clients</span></h2></div>
+      <div class="status-chips" style="gap:0.25rem">
+        <div class="chip" id="chipInstCount"><span>Tracked</span> <span class="v">0</span></div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:0.75rem">
+      <div class="toolbar" style="margin-bottom:0.5rem">
+        <button class="btn small secondary" id="btnRefresh">Refresh</button>
+        <button class="btn small danger" id="btnClearStopped">Clear stopped</button>
+        <button class="btn small danger" id="btnStopAll">Stop all</button>
+      </div>
+      <table id="instancesTable">
+        <thead><tr><th>ID</th><th>Account</th><th>PID</th><th>Status</th><th>Started</th><th>Log (tail)</th><th style="width:170px">Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Settings -->
+  <section class="tab-content" id="tab-settings">
+    <div class="toolbar"><div><h2>Settings <span class="k">paths & behaviour</span></h2></div></div>
+    <div class="panel" style="margin-top:0.75rem">
+      <div class="grid">
+        <div class="field"><label>Launcher mode</label>
+          <select id="stLauncherMode">
+            <option value="wine">Wine (RobloxPlayerBeta.exe)</option>
+            <option value="sober">Sober (Flatpak org.vinegarhq.Sober)</option>
+          </select>
+        </div>
+        <div class="field" id="fldWine"><label>RobloxPlayerBeta.exe path</label><input id="stRobloxExe"></div>
+        <div class="field" id="fldWine"><label>Wine binary</label><input id="stWineBin" value="wine"></div>
+        <div class="field" id="fldWine"><label>Wine prefix base dir</label><input id="stWinePrefixBase"></div>
+        <div class="field" id="fldSober"><label>Sober flatpak binary</label><input id="stSoberBin" value="flatpak"></div>
+        <div class="field" id="fldSober"><label>Sober flatpak id</label><input id="stSoberFlatpakId" value="org.vinegarhq.Sober"></div>
+        <div class="field"><label>Launch delay (seconds)</label><input id="stLaunchDelay" type="number" step="0.5"></div>
+      </div>
+      <button class="btn" id="btnSaveSettings">Save settings</button>
+      <div class="notice">
+        <b>Wine mode:</b> install Wine (<code>sudo apt install wine</code>) and point the exe path at your
+        Windows Roblox install. <b>Sober mode:</b> install Sober (<code>flatpak install flathub org.vinegarhq.Sober</code>);
+        aboauto launches <code>flatpak run org.vinegarhq.Sober</code> and you log in inside Sober.
+        Credentials are encrypted with Fernet and stored in
+        <code>~/.local/share/aboauto/key.bin</code> + <code>aboauto.db</code>. Back up <code>key.bin</code>
+        or you lose access to saved passwords/cookies.
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "/api";
+let selectedTab = "dashboard";
+
+function toast(msg, kind="success"){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.className = "toast " + kind + " show";
+  setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+async function json(path, opts = {}){
+  const res = await fetch(API + path, {
+    headers: {"Content-Type":"application/json", ...opts.headers},
+    ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+function esc(s){return String(s?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]))}
+
+// ---------- tabs ----------
+document.querySelectorAll(".tab").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-"+btn.dataset.tab).classList.add("active");
+    selectedTab = btn.dataset.tab;
+    if(selectedTab==="accounts") loadAccounts();
+    if(selectedTab==="multi") loadAccountsForMulti();
+    if(selectedTab==="instances") loadInstances();
+    if(selectedTab==="settings") loadSettings();
+  });
+});
+
+// ---------- status ----------
+async function loadStatus(){
+  try{
+    const s = await json("/status");
+    const wineOk = s.wine_available;
+    const soberOk = s.sober_available;
+    document.getElementById("statusDot").className = "dot" + (wineOk || soberOk ?" ok":" bad");
+    document.getElementById("chipWine").className = "chip" + (wineOk?" ok":" bad");
+    document.getElementById("chipWine").querySelector(".v").textContent = wineOk ? "available" : "not found (install wine)";
+    document.getElementById("chipSober").className = "chip" + (soberOk?" ok":" bad");
+    document.getElementById("chipSober").querySelector(".v").textContent = soberOk ? "available (flatpak run)" : "not found (flatpak install org.vinegarhq.Sober)";
+    document.getElementById("chipAccounts").querySelector(".v").textContent = s.accounts;
+    document.getElementById("chipRunning").querySelector(".v").textContent = s.running_instances + " / " + s.total_instances;
+  }catch(e){}
+}
+setInterval(loadStatus, 4000);
+loadStatus();
+
+// ---------- accounts ----------
+async function loadAccounts(){
+  try{
+    const accts = await json("/accounts");
+    const tbody = document.querySelector("#accountsTable tbody");
+    tbody.innerHTML = "";
+    for(const a of accts){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${a.id}</td>
+        <td><b class="mono">${esc(a.username)}</b></td>
+        <td>${esc(a.display_name || "-")}</td>
+        <td>${(a.password?"••••••":"-")} ${a.cookie?"<span style='color:var(--accent)'>[cookie set]</span>":""}</td>
+        <td>${a.last_launched ? new Date(a.last_launched).toLocaleString() : "-"}</td>
+        <td class="cell-actions">
+          <button class="btn ghost small" onclick="editAccount(${a.id}, ${JSON.stringify(a).replace(/"/g,'&quot;')})">Edit</button>
+          <button class="btn ghost small" onclick="launchAccount(${a.id})" title="Launch with this account">Launch</button>
+          <button class="btn danger small" onclick="deleteAccount(${a.id})">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }catch(e){console.error(e)}
+}
+
+async function loadAccountsForMulti(){
+  try{
+    const accts = await json("/accounts");
+    const sel = document.getElementById("multiSel");
+    const qb = document.getElementById("qbAccount");
+    sel.innerHTML = ""; qb.innerHTML = '<option value="">— choose account —</option>';
+    for(const a of accts){
+      const o1 = document.createElement("option"); o1.value = a.id; o1.textContent = a.display_name || a.username;
+      sel.appendChild(o1);
+      const o2 = o1.cloneNode(true); qb.appendChild(o2);
+    }
+  }catch(e){}
+}
+
+document.getElementById("btnOpenAddAccount").addEventListener("click", ()=>{
+  const f = document.getElementById("addAccountForm");
+  f.style.display = f.style.display === "none" ? "grid" : "none";
+  document.getElementById("inAccUser").focus();
+});
+document.getElementById("btnCancelAdd").addEventListener("click", ()=>{
+  document.getElementById("addAccountForm").style.display = "none";
+});
+
+document.getElementById("btnSaveAccount").addEventListener("click", async ()=>{
+  const body = {
+    username: document.getElementById("inAccUser").value,
+    password: document.getElementById("inAccPass").value,
+    cookie: document.getElementById("inAccCookie").value,
+    display_name: document.getElementById("inAccDisplay").value,
+    note: document.getElementById("inAccNote").value,
+  };
+  try{
+    await json("/accounts", {method:"POST", body});
+    document.getElementById("addAccountForm").style.display = "none";
+    [document.getElementById("inAccUser"),document.getElementById("inAccPass"),document.getElementById("inAccCookie"),document.getElementById("inAccDisplay"),document.getElementById("inAccNote")].forEach(i=>i.value="");
+    toast("Account saved");
+    loadAccounts(); loadAccountsForMulti(); loadStatus();
+  }catch(e){alert(e.message)}
+});
+
+async function launchAccount(id){
+  try{
+    await json(`/accounts/${id}/launch`, {method:"POST"});
+    toast("Launching instance");
+    loadInstances(); loadStatus();
+  }catch(e){alert(e.message)}
+}
+
+async function deleteAccount(id){
+  if(!confirm("Delete this account? (credentials are removed permanently)")) return;
+  try{
+    await json(`/accounts/${id}`, {method:"DELETE"});
+    toast("Account deleted");
+    loadAccounts(); loadAccountsForMulti(); loadStatus();
+  }catch(e){alert(e.message)}
+}
+
+window.editAccount = (id, a) => {
+  document.getElementById("inAccUser").value = a.username;
+  document.getElementById("inAccPass").value = a.password ? "••••••" : "";
+  document.getElementById("inAccCookie").value = a.cookie ? "••••••" : "";
+  document.getElementById("inAccDisplay").value = a.display_name || "";
+  document.getElementById("inAccNote").value = a.note || "";
+  const f = document.getElementById("addAccountForm"); f.style.display = "grid";
+  const save = document.getElementById("btnSaveAccount");
+  const onSave = async ()=>{
+    const body = {username:document.getElementById("inAccUser").value};
+    const p = document.getElementById("inAccPass").value;
+    const c = document.getElementById("inAccCookie").value;
+    if(p && !p.includes("•")) body.password = p;
+    if(c && !c.includes("•")) body.cookie = c;
+    body.display_name = document.getElementById("inAccDisplay").value;
+    body.note = document.getElementById("inAccNote").value;
+    try{
+      await json(`/accounts/${id}`, {method:"PUT", body});
+      f.style.display = "none";
+      toast("Account updated");
+      loadAccounts(); loadAccountsForMulti();
+    }catch(e){alert(e.message)}
+  };
+  save.onclick = null; save.onclick = onSave;
+  save.textContent = "Update account";
+};
+
+// ---------- multi instance ----------
+document.getElementById("btnMultiSelectAll").addEventListener("click", ()=>{
+  const sel = document.getElementById("multiSel");
+  [...sel.options].forEach(o=>o.selected=true);
+});
+document.getElementById("btnMultiLaunch2").addEventListener("click", async ()=>{
+  const sel = document.getElementById("multiSel");
+  const ids = [...sel.options].filter(o=>o.selected).map(o=>o.value);
+  if(!ids.length){ alert("Select at least one account"); return; }
+  try{
+    const r = await json("/instances/launch-multi", {method:"POST", body:{account_ids: ids}});
+    toast(`Launched ${r.count} instance(s)`);
+    loadInstances(); loadStatus();
+  }catch(e){alert(e.message)}
+});
+
+// ---------- instances ----------
+function statusBadge(s){
+  const cls = {"running":"running","stopped":"stopped","error":"error","starting":"starting"}[s]||"stopped";
+  return `<span class="badge ${cls}">${esc(s)}</span>`;
+}
+async function loadInstances(){
+  try{
+    const insts = await json("/instances");
+    const tbody = document.querySelector("#instancesTable tbody");
+    document.getElementById("chipInstCount").querySelector(".v").textContent = insts.length;
+    tbody.innerHTML = "";
+    for(const i of insts){
+      const tr = document.createElement("tr");
+      const started = i.started_at ? new Date(i.started_at).toLocaleString() : "-";
+      const logTail = (i.log||[]).slice(-3).map(l=>esc(l)).join("<br>");
+      tr.innerHTML = `
+        <td><span class="mono">${esc(i.id)}</span></td>
+        <td>${esc(i.account_username || "-")}</td>
+        <td>${i.pid ?? "-"}</td>
+        <td>${statusBadge(i.status)}</td>
+        <td>${started}</td>
+        <td><div class="log">${logTail}</div></td>
+        <td class="cell-actions">
+          ${i.status === "running" ? `
+            <button class="btn danger small" onclick="stopInstance('${esc(i.id)}', false)">Stop</button>
+            <button class="btn danger small" onclick="stopInstance('${esc(i.id)}', true)">Kill</button>
+          ` : `
+            <button class="btn ghost small" onclick="removeInstance('${esc(i.id)}')" title="Remove from list">Remove</button>
+          `}
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }catch(e){console.error(e)}
+}
+
+async function stopInstance(id, force){
+  try{
+    await json(`/instances/${id}`, {method:"DELETE", body:{force}});
+    toast(force ? "Instance killed" : "Instance stopped");
+    loadInstances(); loadStatus();
+  }catch(e){alert(e.message)}
+}
+async function removeInstance(id){
+  try{
+    await json(`/instances/${id}`, {method:"DELETE"});
+    toast("Removed");
+    loadInstances(); loadStatus();
+  }catch(e){alert(e.message)}
+}
+document.getElementById("btnRefresh").addEventListener("click", ()=>{ loadInstances(); loadStatus(); });
+document.getElementById("btnClearStopped").addEventListener("click", async ()=>{
+  try{ await json("/instances/clear-stopped", {method:"POST"}); toast("Cleared"); loadInstances(); loadStatus(); }
+  catch(e){alert(e.message)}
+});
+document.getElementById("btnStopAll").addEventListener("click", async ()=>{
+  if(!confirm("Stop all running instances?")) return;
+  try{ await json("/instances/stop-all", {method:"POST"}); toast("Stopped all"); loadInstances(); loadStatus(); }
+  catch(e){alert(e.message)}
+});
+
+// ---------- settings ----------
+async function loadSettings(){
+  try{
+    const s = await json("/settings");
+    document.getElementById("stLauncherMode").value = s.launcher_mode || "wine";
+    document.getElementById("stRobloxExe").value = s.roblox_exe || "";
+    document.getElementById("stWineBin").value = s.wine_bin || "wine";
+    document.getElementById("stWinePrefixBase").value = s.wine_prefix_base || "";
+    document.getElementById("stSoberBin").value = s.sober_bin || "flatpak";
+    document.getElementById("stSoberFlatpakId").value = s.sober_flatpak_id || "org.vinegarhq.Sober";
+    document.getElementById("stLaunchDelay").value = s.launch_delay_seconds ?? 2;
+    toggleSettingsFields(s.launcher_mode || "wine");
+  }catch(e){}
+}
+function toggleSettingsFields(mode){
+  const wine = document.querySelectorAll("#fldWine");
+  const sober = document.querySelectorAll("#fldSober");
+  const showWine = mode === "wine";
+  wine.forEach(el=>el.classList.toggle("hidden", !showWine));
+  sober.forEach(el=>el.classList.toggle("hidden", showWine));
+}
+document.getElementById("stLauncherMode").addEventListener("change", (e)=>{
+  toggleSettingsFields(e.target.value);
+});
+
+document.getElementById("btnSaveSettings").addEventListener("click", async ()=>{
+  const body = {
+    launcher_mode: document.getElementById("stLauncherMode").value,
+    roblox_exe: document.getElementById("stRobloxExe").value,
+    wine_bin: document.getElementById("stWineBin").value || "wine",
+    wine_prefix_base: document.getElementById("stWinePrefixBase").value,
+    sober_bin: document.getElementById("stSoberBin").value || "flatpak",
+    sober_flatpak_id: document.getElementById("stSoberFlatpakId").value || "org.vinegarhq.Sober",
+    launch_delay_seconds: parseFloat(document.getElementById("stLaunchDelay").value) || 2,
+  };
+  try{
+    await json("/settings", {method:"PUT", body});
+    toast("Settings saved");
+  }catch(e){alert(e.message)}
+});
+
+// ---------- multi instance ----------
+document.getElementById("btnQbLaunch").addEventListener("click", async ()=>{
+  const sel = document.getElementById("qbAccount");
+  if(!sel.value){ alert("Choose an account"); return; }
+  try{
+    await json("/instances/launch-multi", {method:"POST", body:{account_ids:[sel.value]}});
+    toast("Launching instance");
+    loadInstances(); loadStatus();
+  }catch(e){alert(e.message)}
+});
+
+// initial load of lists for the default tab
+loadAccounts(); loadAccountsForMulti(); loadInstances(); loadSettings();
+</script>
+</body>
+</html>

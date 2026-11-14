@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aboauto"
+version = "0.1.0"
+description = "Roblox semi account manager for Linux: account manager, multi-instance launch, and instance management."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "aboauto" }]
+license = { text = "MIT" }
+keywords = ["roblox", "account-manager", "multi-instance", "linux", "wine"]
+
+dependencies = [
+    "flask>=3.0",
+    "cryptography>=42.0",
+]
+
+[project.scripts]
+aboauto = "aboauto.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["aboauto*"]
+
+[tool.setuptools.package-data]
+aboauto = ["templates/*", "static/*"]

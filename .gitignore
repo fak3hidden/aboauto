@@ -1,0 +1,23 @@
+# Bytecode / environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Package build artifacts
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# aboauto runtime data (credentials live here - do not commit)
+data/
+*.db
+key.bin
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
