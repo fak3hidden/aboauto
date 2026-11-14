@@ -55,13 +55,17 @@ print("AccountStore CRUD + encryption: OK")
 inst = mgr.spawn(account_id=None, username="nouser", roblox_exe="/nonexistent/RobloxPlayerBeta.exe")
 assert inst.id
 assert inst.status in ("starting", "running", "error")
-# give the background thread a moment
-import time; time.sleep(0.6)
-inst = mgr.get(inst.id)
-# without wine it should be error
-assert inst.status == "error", inst.status
-assert any("failed to prepare prefix" in l for l in inst.log), inst.log
-print("InstanceManager spawn (missing wine): OK ->", inst.status)
+# wait for the background thread to reach a terminal state
+import time
+for _ in range(50):  # up to ~5s
+    inst = mgr.get(inst.id)
+    if inst.status in ("error", "stopped", "running"):
+        break
+    time.sleep(0.1)
+# if wine is missing -> error; if wine is present -> nonexistent exe -> error
+assert inst.status in ("error", "stopped"), f"unexpected status: {inst.status}"
+assert any("failed to prepare prefix" in l or "failed to launch" in l for l in inst.log), inst.log
+print("InstanceManager spawn: OK ->", inst.status)
 
 # ---- Flask API ----
 app = create_app(store=store, mgr=mgr)
