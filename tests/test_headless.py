@@ -69,6 +69,13 @@ assert inst.status in ("error", "stopped", "running"), f"unexpected status: {ins
 assert inst.log, "instance should have at least one log line"
 print("InstanceManager spawn: OK ->", inst.status, "| log:", inst.log[-1] if inst.log else "")
 
+# Clean up the spawned instance so we don't leave Wine windows open.
+try:
+    mgr.stop(inst.id, force=True)
+except Exception:
+    pass
+mgr.clear_stopped()
+
 # ---- Flask API ----
 app = create_app(store=store, mgr=mgr)
 client = app.test_client()
